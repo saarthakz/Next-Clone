@@ -1,5 +1,3 @@
 node_modules
-_components
-_pages
-transpiledScript.js
-sourceScript.jsx
+build
+script.js

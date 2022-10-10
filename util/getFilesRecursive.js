@@ -1,7 +1,7 @@
 import { readdirSync, statSync } from "fs";
 import { join } from "path";
 
-function getFilesRecursive(directory, files) {
+export default function (directory, files) {
   const filesInDirectory = readdirSync(directory);
   for (const file of filesInDirectory) {
     const absolute = join(directory, file);
@@ -13,4 +13,3 @@ function getFilesRecursive(directory, files) {
   };
 };
 
-export default getFilesRecursive;

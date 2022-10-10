@@ -1,7 +1,7 @@
 import React from 'react';
-import Index from '../components/Index.js';
+import Product from '../components/Product.js';
 
-export const functionType = "static";
+export const functionType = "server-rendered";
 
 export function getProps() {
   return {
@@ -11,6 +11,7 @@ export function getProps() {
 
 export default function index(props) {
   return (
-    <Index {...props} />
+    <Product {...props} />
   );
 };
+

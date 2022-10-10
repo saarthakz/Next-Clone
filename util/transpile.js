@@ -2,7 +2,7 @@ import { build } from "esbuild";
 import getFilesRecursive from "./getFilesRecursive.js";
 getFilesRecursive;
 
-export default async function transpile() {
+export default async function () {
   const routes = [];
   const components = [];
   getFilesRecursive("pages", routes);
@@ -17,7 +17,7 @@ export default async function transpile() {
     },
     format: "esm",
     jsx: "transform",
-    outdir: "_pages"
+    outdir: "build/pages"
   });
 
   await build({
@@ -29,7 +29,7 @@ export default async function transpile() {
     },
     format: "esm",
     jsx: "transform",
-    outdir: "_components"
+    outdir: "build/components"
   });
 
 };

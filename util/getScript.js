@@ -1,9 +1,11 @@
-import React from "react";
+export default function (pathToPage) {
+  return `import React from "react";
 import ReactDOM from "react-dom/client";
 (async () => {
-  const { default: Component } = await import("./_pages/index.js");
+  const { default: Component } = await import("./${pathToPage}");
   const props = window.__DATA__;
   ReactDOM.hydrateRoot(document.getElementById("root"), React.createElement(Component, {
     ...props
   }));
-})();
+})();`;
+};

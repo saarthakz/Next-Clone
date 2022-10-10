@@ -3,7 +3,7 @@ import React from "react";
 const app = express();
 import ReactDOMServer from "react-dom/server";
 import getScript from "./util/getFrontEndScript.js";
-import getPageTemplate from "./util/getPageTemplate.js";
+import getPage from "./util/getPage.js";
 import serialize from "serialize-javascript";
 import getFilesRecursive from "./util/getFilesRecursive.js";
 import { readFileSync, writeFileSync } from "fs";
@@ -32,7 +32,6 @@ import fs from 'node:fs';
   for (let route of routes) {
     const file = fs.readFileSync(route).toString().replace("/components/", "/_components/");
     fs.writeFileSync(route, file);
-    console.log(route);
     const { default: Component, getProps, functionType } = await import(`./${route}`);
 
     route = route.replace("\\", "/");
@@ -40,8 +39,6 @@ import fs from 'node:fs';
     route = route.split("_pages/")[1];
 
     writeFileSync("script.js", src);
-
-    console.log(route);
 
     await build({
       entryPoints: ["script.js"],
@@ -53,31 +50,30 @@ import fs from 'node:fs';
       },
       format: "esm",
       jsx: "transform",
-      outfile: `public/js/${route}`,
+      outfile: `public/static/${route}`,
       minify: true,
     });
-
-
 
     if (functionType == "static" || functionType == "server-rendered") {
       const props = await getProps();
 
       const markup = ReactDOMServer.renderToString(
-        React.createElement(Component, {})
-
+        React.createElement(Component, { ...props })
       );
-      const html = getPageTemplate(
+
+      const html = getPage(
         markup, //HTML Markup
         "Doc", //Page Title
-        `js/${route}`, //Path to Script
+        `static/${route}`, //Path to Script
         serialize(props) //Props
       );
 
+
       const url = route
         .split(".js")[0]
-        .replace("index", "");
+        .replace("index", "/");
 
-      app.get(url, (req, res) => res.send(html));
+      app.get("/" + url, (req, res) => res.send(html));
     };
   }
 
