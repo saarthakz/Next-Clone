@@ -1,11 +1,11 @@
 import React from 'react';
 
-export default function About() {
+export default function About({ name }) {
   return (
     <div>
       <a href="/"
-      // onClick={() => history.pushState("/",)}
       >Link to Home</a>
+      <p>{name}</p>
     </div>
   );
 };

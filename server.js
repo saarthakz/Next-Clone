@@ -8,23 +8,43 @@ import serialize from "serialize-javascript";
 import getFilesRecursive from "./util/getFilesRecursive.js";
 import { readFileSync, writeFileSync } from "fs";
 import { build } from "esbuild";
-import transpileJSX from "./util/transpileJSX.js";
+import transpile from "./util/transpile.js";
+import fs from 'node:fs';
 
 (async () => {
 
-  const PORT = process.env.PORT || 5000;
+  const map = {
+    "static": 0,
+    "server-rendered": 1,
+  };
+
+  const PORT = process.env.PORT || 3000;
   const server = app.listen(PORT, () => console.log(`Listening to Port: ${PORT}`));
-  await transpileJSX();
+
+  app.use(express.static("public"));
+
+  //Build Starts
+  await transpile();
 
   let routes = [];
   getFilesRecursive("_pages", routes);
 
   for (let route of routes) {
+    const file = fs.readFileSync(route).toString().replace("/components/", "/_components/");
+    fs.writeFileSync(route, file);
+    console.log(route);
+    const { default: Component, getProps, functionType } = await import(`./${route}`);
+
     route = route.replace("\\", "/");
     const src = getScript(route);
-    writeFileSync("sourceScript.jsx", src);
+    route = route.split("_pages/")[1];
+
+    writeFileSync("script.js", src);
+
+    console.log(route);
+
     await build({
-      entryPoints: ["sourceScript.jsx"],
+      entryPoints: ["script.js"],
       bundle: true,
       loader: {
         ".js": "jsx",
@@ -33,16 +53,33 @@ import transpileJSX from "./util/transpileJSX.js";
       },
       format: "esm",
       jsx: "transform",
-      outfile: "transpiledScript.js",
+      outfile: `public/js/${route}`,
       minify: true,
     });
-    const minifiedBundledScript = readFileSync("transpiledScript.js").toString();
-    const { default: Component, getProps } = await import(`./${route}`);
-    const props = await getProps();
-    const markup = ReactDOMServer.renderToString(React.createElement(Component, props));
-    const html = getPageTemplate(markup, "Doc", minifiedBundledScript, serialize({}));
-    const url = ((route.split("_pages")[1]).split(".js")[0]).replace("index", "");
-    app.get(url, (req, res) => res.send(html));
+
+
+
+    if (functionType == "static" || functionType == "server-rendered") {
+      const props = await getProps();
+
+      const markup = ReactDOMServer.renderToString(
+        React.createElement(Component, {})
+
+      );
+      const html = getPageTemplate(
+        markup, //HTML Markup
+        "Doc", //Page Title
+        `js/${route}`, //Path to Script
+        serialize(props) //Props
+      );
+
+      const url = route
+        .split(".js")[0]
+        .replace("index", "");
+
+      app.get(url, (req, res) => res.send(html));
+    };
   }
+
 
 })();

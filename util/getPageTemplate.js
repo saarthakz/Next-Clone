@@ -1,4 +1,4 @@
-export default function getPageTemplate(markup = "", title = "", bundledScript = "", serializedProps) {
+export default function getPageTemplate(markup = "", title = "", scriptPath = "", serializedProps) {
 
   return `
   <!DOCTYPE html>
@@ -18,7 +18,7 @@ export default function getPageTemplate(markup = "", title = "", bundledScript =
   <script>
     window.__DATA__ = ${serializedProps};
   </script>
-  <script>${bundledScript}</script>
+  <script src="${scriptPath}"></script>
 
   </html>
 `;
