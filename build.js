@@ -4,25 +4,37 @@ import getScript from "./util/getScript.js";
 import getPage from "./util/getPage.js";
 import serialize from "serialize-javascript";
 import getFilesRecursive from "./util/getFilesRecursive.js";
-import fs from "fs";
-import fsPromises from "fs/promises";
+import { writeFileSync, readFileSync } from "fs";
+import { mkdir, rm } from "fs/promises";
 import { build } from "esbuild";
 import transpile from "./util/transpile.js";
 import makeFunction from "./util/makeFunction.js";
 
+
 await transpile();
 let routes = [];
+let buildRoutes = [];
+const buildRouteRoot = "routes/";
 getFilesRecursive("build/pages", routes);
 
 try {
-  await fsPromises.mkdir("functions");
+  await mkdir("functions");
 
-} catch (error) {
-};
+} catch (error) { };
+try {
+  await mkdir("routes");
+
+} catch (error) { };
+
+try {
+  await rm("public/javascript", {
+    recursive: true,
+    force: true
+  });
+} catch (error) { };
+
 
 for (let route of routes) {
-  const file = fs.readFileSync(route).toString();
-  fs.writeFileSync(route, file);
   route = route.replaceAll("\\", "/");
   const { default: Component, getProps, functionType } = await import(`./${route}`);
 
@@ -30,22 +42,8 @@ for (let route of routes) {
 
     const src = getScript(route);
     route = route.split("pages/")[1];
-
-    fs.writeFileSync("script.js", src);
-
-    await build({
-      entryPoints: ["script.js"],
-      bundle: true,
-      loader: {
-        ".js": "jsx",
-        ".jsx": "jsx",
-        ".tsx": "tsx",
-      },
-      format: "esm",
-      jsx: "transform",
-      outfile: `public/static/${route}`,
-      minify: true,
-    });
+    buildRoutes.push(buildRouteRoot + route);
+    writeFileSync(buildRouteRoot + route, src);
 
     const props = await getProps();
 
@@ -56,14 +54,13 @@ for (let route of routes) {
     const html = getPage(
       markup, //HTML Markup
       "Doc", //Page Title
-      `static/${route}`, //Path to Script
+      `javascript/${route}`, //Path to Script
       serialize(props) //Props
     );
 
     const staticHTMLRoute = route.split(".js")[0] + ".html";
 
-    // console.log(staticHTMLRoute);
-    fs.writeFileSync(`public/static/${staticHTMLRoute}`, html);
+    writeFileSync(`public/${staticHTMLRoute}`, html);
 
     const url = route
       .split(".js")[0]
@@ -71,10 +68,32 @@ for (let route of routes) {
 
   };
 
+
   if (functionType == "server-rendered") {
 
     const functionTemplate = makeFunction(route);
     route = route.split("pages/")[1];
-    fs.writeFileSync(`functions/${route}`, functionTemplate);
+    writeFileSync(`functions/${route}`, functionTemplate);
   };
 };
+
+await build({
+  entryPoints: [...buildRoutes],
+  bundle: true,
+  loader: {
+    ".js": "jsx",
+    ".jsx": "jsx",
+    ".tsx": "tsx",
+  },
+  format: "esm",
+  jsx: "transform",
+  outdir: `public/javascript`,
+  minify: false,
+  splitting: true
+});
+
+rm("routes", {
+  recursive: true,
+  force: true
+});
+

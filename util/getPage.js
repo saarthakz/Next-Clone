@@ -18,7 +18,7 @@ export default function (markup = "", title = "", scriptPath = "", serializedPro
   <script>
     window.__DATA__ = ${serializedProps};
   </script>
-  <script src="${scriptPath}"></script>
+  <script src="${scriptPath}" type="module"></script>
 
   </html>
 `;
