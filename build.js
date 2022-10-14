@@ -1,15 +1,14 @@
-import React from "react";
-import ReactDOMServer from "react-dom/server";
+import { createElement } from "react";
+import { renderToString } from "react-dom/server";
 import getScript from "./util/getScript.js";
 import getPage from "./util/getPage.js";
 import serialize from "serialize-javascript";
 import getFilesRecursive from "./util/getFilesRecursive.js";
-import { writeFileSync, readFileSync } from "fs";
+import { writeFileSync } from "fs";
 import { mkdir, rm } from "fs/promises";
 import { build } from "esbuild";
 import transpile from "./util/transpile.js";
 import makeFunction from "./util/makeFunction.js";
-
 
 await transpile();
 let routes = [];
@@ -17,15 +16,8 @@ let buildRoutes = [];
 const buildRouteRoot = "routes/";
 getFilesRecursive("build/pages", routes);
 
-try {
-  await mkdir("functions");
-
-} catch (error) { };
-try {
-  await mkdir("routes");
-
-} catch (error) { };
-
+try { await mkdir("functions"); } catch (error) { };
+try { await mkdir("routes"); } catch (error) { };
 try {
   await rm("public/javascript", {
     recursive: true,
@@ -33,28 +25,23 @@ try {
   });
 } catch (error) { };
 
-
 for (let route of routes) {
   route = route.replaceAll("\\", "/");
   const { default: Component, getProps, functionType } = await import(`./${route}`);
 
+  const src = getScript(route);
+  route = route.split("pages/")[1];
+  buildRoutes.push(buildRouteRoot + route);
+  writeFileSync(buildRouteRoot + route, src);
+
   if (functionType == "static") {
-
-    const src = getScript(route);
-    route = route.split("pages/")[1];
-    buildRoutes.push(buildRouteRoot + route);
-    writeFileSync(buildRouteRoot + route, src);
-
     const props = await getProps();
-
-    const markup = ReactDOMServer.renderToString(
-      React.createElement(Component, { ...props })
-    );
+    const markup = renderToString(createElement(Component, { ...props }));
 
     const html = getPage(
       markup, //HTML Markup
       "Doc", //Page Title
-      `javascript/${route}`, //Path to Script
+      `/__assets__/javascript/${route}`, //Path to Script
       serialize(props) //Props
     );
 
@@ -68,11 +55,8 @@ for (let route of routes) {
 
   };
 
-
   if (functionType == "server-rendered") {
-
     const functionTemplate = makeFunction(route);
-    route = route.split("pages/")[1];
     writeFileSync(`functions/${route}`, functionTemplate);
   };
 };
@@ -87,7 +71,7 @@ await build({
   },
   format: "esm",
   jsx: "transform",
-  outdir: `public/javascript`,
+  outdir: `public/__assets__/javascript`,
   minify: false,
   splitting: true
 });
