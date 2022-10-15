@@ -13,6 +13,7 @@ import makeFunction from "./util/makeFunction.js";
 await transpile();
 let routes = [];
 let buildRoutes = [];
+let buildFunctions = [];
 const buildRouteRoot = "routes/";
 getFilesRecursive("build/pages", routes);
 
@@ -57,9 +58,25 @@ for (let route of routes) {
 
   if (functionType == "server-rendered") {
     const functionTemplate = makeFunction(route);
-    writeFileSync(`functions/${route}`, functionTemplate);
+    writeFileSync(`build/functions/${route}`, functionTemplate);
+    buildFunctions.push(`build/functions/${route}`);
   };
 };
+
+await build({
+  entryPoints: [...buildFunctions],
+  bundle: true,
+  loader: {
+    ".js": "jsx",
+    ".jsx": "jsx",
+    ".tsx": "tsx",
+  },
+  platform: "node",
+  format: "esm",
+  jsx: "transform",
+  outdir: `functions`,
+  minify: false, //true for production
+});
 
 await build({
   entryPoints: [...buildRoutes],
@@ -72,11 +89,16 @@ await build({
   format: "esm",
   jsx: "transform",
   outdir: `public/__assets__/javascript`,
-  minify: false,
+  minify: false, //true for production
   splitting: true
 });
 
-rm("routes", {
+await rm("routes", {
+  recursive: true,
+  force: true
+});
+
+await rm("build/functions", {
   recursive: true,
   force: true
 });
