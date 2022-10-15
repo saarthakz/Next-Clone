@@ -17,7 +17,7 @@ let buildFunctions = [];
 const buildRouteRoot = "routes/";
 getFilesRecursive("build/pages", routes);
 
-try { await mkdir("functions"); } catch (error) { };
+try { await mkdir("build/functions"); } catch (error) { };
 try { await mkdir("routes"); } catch (error) { };
 try {
   await rm("public/javascript", {
@@ -64,7 +64,7 @@ for (let route of routes) {
 };
 
 await build({
-  entryPoints: [...buildFunctions],
+  entryPoints: buildFunctions,
   bundle: true,
   loader: {
     ".js": "jsx",
@@ -72,14 +72,18 @@ await build({
     ".tsx": "tsx",
   },
   platform: "node",
-  format: "esm",
+  format: "cjs",
   jsx: "transform",
   outdir: `functions`,
-  minify: false, //true for production
+  outExtension: {
+    ".js": ".cjs"
+  },
+  minify: true, //For production
+  // minify: false, //For development
 });
 
 await build({
-  entryPoints: [...buildRoutes],
+  entryPoints: buildRoutes,
   bundle: true,
   loader: {
     ".js": "jsx",
@@ -89,7 +93,8 @@ await build({
   format: "esm",
   jsx: "transform",
   outdir: `public/__assets__/javascript`,
-  minify: false, //true for production
+  minify: true, //For production
+  // minify: false, //For development
   splitting: true
 });
 

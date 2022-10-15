@@ -1,13 +1,16 @@
 import http from "node:http";
 import express from "express";
+import path from "node:path";
 const app = express();
 
 const port = 3001;
 const server = app.listen(port, () => console.log(`Listening to port ${port}`));
 
-app.use(express.static("public"));
+app.use(express.static('public', { index: '_' }));
 
-app.all("*", function (req, res) {
+app.all("*", async function (req, res) {
+
+  if (req.url === '/') req.url = "/index";
 
   const assetsRegex = new RegExp("/__assets__/");
   const apiRegex = new RegExp("/__api__/");
@@ -17,9 +20,20 @@ app.all("*", function (req, res) {
 
   if (result == null) {
     res.redirect(req.url + ".html");
-  } else {
-    res.send("Hello");
-    res.end();
+    return;
+  };
+
+  if (htmlRegex != null) {
+    //Try Server Side Rendering
+    const route = req.url.split(".html")[0];
+    let html = "";
+    try {
+      const { default: renderer } = await import("./functions" + route + ".cjs");
+      html = renderer.default();
+    } catch (error) {
+      console.log(error);
+    };
+    res.send(html);
   };
 
 });

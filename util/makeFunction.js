@@ -5,7 +5,7 @@ export default function (route) {
   import serialize from "serialize-javascript";
   import getPage from "../../util/getPage";
   
-  export default function () {
+  export default function renderer() {
     const props = getProps();
     const markup = renderToString(createElement(Component, { ...props }));
     return getPage(
