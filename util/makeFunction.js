@@ -1,10 +1,13 @@
-export default function (route) {
-  return `import { getProps, default as Component } from "../pages/${route}";
+export default function makeFunction(route) {
+  const cwd = process.cwd().replaceAll("\\", "/");
+  return `
+  const { getProps, default: Component } = await import("${cwd + "/build/pages/" + route}");
+  
   import { createElement } from "react";
   import { renderToString } from "react-dom/server";
   import serialize from "serialize-javascript";
-  import getPage from "../../util/getPage";
-  
+  const { default: getPage } = await import("${cwd}" + "/util/getPage.js");
+
   export default function renderer() {
     const props = getProps();
     const markup = renderToString(createElement(Component, { ...props }));

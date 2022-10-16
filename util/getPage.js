@@ -1,4 +1,4 @@
-export default function (markup = "", title = "", scriptPath = "", serializedProps) {
+export default function getPage(markup = "", title = "", scriptPath = "", serializedProps) {
 
   return `
   <!DOCTYPE html>
