@@ -10,7 +10,7 @@ import { build } from "esbuild";
 import transpile from "./util/transpile.js";
 import makeFunction from "./util/makeFunction.js";
 import { dirname } from "path";
-import { builtinModules } from "module";
+import { commonjs } from "@hyrious/esbuild-plugin-commonjs";
 
 await transpile();
 let routes = [];
@@ -24,7 +24,7 @@ try { await mkdir("routes"); } catch (error) { };
 
 for (let route of routes) {
   route = route.replaceAll("\\", "/");
-  const { default: Component, getProps, functionType } = await import(`./${route}`);
+  const { default: Component, functionType } = await import(`./${route}`);
 
   const src = getScript(route);
   route = route.split("pages/")[1];
@@ -33,6 +33,7 @@ for (let route of routes) {
   writeFileSync(buildRouteRoot + route, src);
 
   if (functionType == "static") {
+    const { default: getProps } = await import(`./props/${route}`);
     const props = await getProps();
     const markup = renderToString(createElement(Component, { ...props }));
     const html = getPage(
@@ -41,14 +42,8 @@ for (let route of routes) {
       `/__assets__/javascript/${route}`, //Path to Script
       serialize(props) //Props
     );
-
     const staticHTMLRoute = route.split(".js")[0] + ".html";
-
     writeFileSync(`public/${staticHTMLRoute}`, html);
-
-    const url = route
-      .split(".js")[0]
-      .replace("index", "/");
 
   };
 
@@ -60,7 +55,7 @@ for (let route of routes) {
   };
 };
 
-//building functions
+// building functions
 try {
   await build({
     entryPoints: buildFunctions,
@@ -74,9 +69,11 @@ try {
     format: "esm",
     jsx: "transform",
     outdir: `functions`,
+    plugins: [commonjs()],
     // minify: true, //For production
     minify: false, //For development
   });
+
 } catch (err) {
   console.log(err);
 };
@@ -94,14 +91,15 @@ try {
     format: "esm",
     jsx: "transform",
     outdir: `public/__assets__/javascript`,
-    minify: true, //For production
-    // minify: false, //For development
+    // minify: true, //For production
+    minify: false, //For development
     splitting: true
   });
 } catch (err) {
   console.log(err);
 };
 
+//File removal
 await rm("routes", {
   recursive: true,
   force: true
