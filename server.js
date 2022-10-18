@@ -1,6 +1,5 @@
 import http from "node:http";
 import express from "express";
-import path from "node:path";
 const app = express();
 
 const port = 3001;
@@ -28,8 +27,9 @@ app.all("*", async function (req, res) {
     const route = req.url.split(".html")[0];
     let html = "";
     try {
-      const { default: renderer } = await import("./functions" + route + ".cjs");
-      html = renderer.default();
+      const { default: renderer } = await import("./functions" + route + ".js");
+      // console.log(renderer);
+      html = await renderer();
     } catch (error) {
       console.log(error);
     };
