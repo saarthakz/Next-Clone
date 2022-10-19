@@ -28,7 +28,6 @@ app.all("*", async function (req, res) {
     let html = "";
     try {
       const { default: renderer } = await import("./functions" + route + ".js");
-      // console.log(renderer);
       html = await renderer();
     } catch (error) {
       console.log(error);

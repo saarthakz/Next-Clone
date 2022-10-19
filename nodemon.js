@@ -1,24 +1,23 @@
+import { basename, dirname } from 'node:path';
 import nodemon from 'nodemon';
 
 nodemon({
   script: 'server.js',
   ext: 'js, jsx',
-  ignore: ["./node_modules",
-    "./_pages",
-    "./_components",
-    "./script.js",
-    "./transpiledScript.js",
-    "public"]
+  ignore: ["./node_modules"],
+  watch: [
+    "components",
+    "pages",
+    "props"
+  ]
 });
 
-nodemon
-  .on('start', function () {
-    console.log('App has started');
-  })
-  .on('quit', function () {
-    console.log('App has quit');
-    process.exit();
-  })
-  .on('restart', function (files) {
-    console.log('App restarted due to: ', files);
-  });
+nodemon.on('restart', function (files) {
+  const cd = basename(process.cwd());
+  const modFilePath = files[0].split(cd)[1].replaceAll("\\", "/");
+  const pathSplits = modFilePath.split("/");
+  const modFileDir = pathSplits[1];
+
+
+
+});
